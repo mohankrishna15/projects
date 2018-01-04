@@ -84,53 +84,77 @@ def load_preprocess_training_batch(batch_id):
         filename = 'preprocessed_data/train_data/pre_processed_batch_' + str(batch_id) + '.p'
         loaded_features, loaded_labels = cPickle.load(open(filename, mode='rb'))
         # Return the training data in batches of size <batch_size> or less
-        return loaded_features, loaded_labels
+        return loaded_features.astype(np.int64), loaded_labels.astype(np.int64)
+    
 
 
 epochs = 50
 keep_probability = 0.75
-save_model_path = "./capstone"
+save_model_path = "./aug_capstone"
 image_save_path = "images/"
-tf.reset_default_graph()
+#tf.reset_default_graph()
+#sess = tf.Session()
+
+
+#sess.run(tf.global_variables_initializer())
+
+
 # Inputs
 x = neural_net_image_input((500, 500, 3))
 y = neural_net_label_input((500, 500, 1))
 keep_prob = neural_net_keep_prob_input()
 
 net = SegmentationModel(None)
+
+saver = tf.train.Saver(max_to_keep=40)
+
+def load_pretrained_model(sess):
+    if not tf.train.checkpoint_exists("/home/systems/capstone/aug_supervisor_training/checkpoint"):
+        saver.restore(sess, "/home/systems/capstone/model.ckpt-init")
+        print("initialised")
+        
+
 cost = net.loss(x, y,keep_prob)
 cost_summary=tf.summary.scalar("loss",cost)
 optim = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(cost)
-saver = tf.train.Saver(max_to_keep=40);  
+ 
 pred = net.preds(x)
-
-sess = tf.Session()
 merged = tf.summary.merge_all()
-file_writer = tf.summary.FileWriter('/home/systems/capstone/logs/', sess.graph)
-sess.run(tf.global_variables_initializer())
 
-for epoch in range(epochs):
-    for batch_i  in range(0, 1):
-        start_time = time.time()
-        batch_features, batch_labels = load_preprocess_training_batch(batch_i)
-        f = np.zeros([16,500,500,3])
-        l = np.zeros([16,500,500,1])
-        for i in range(16):
-            f[i] = batch_features[i,:,:,:]
-            l[i] = batch_labels[i,:,:,:]
-        loss_value,pred_value,_=sess.run([cost,pred,optim],feed_dict={x:f,y:l,keep_prob:keep_probability})
-        fig, axes = plt.subplots(2, 3, figsize = (16, 12))
-        for i in range(2):
-            axes.flat[i * 3].set_title('data')
-            axes.flat[i * 3].imshow((f[i])[:, :, ::-1].astype(np.uint8))
+sv = tf.train.Supervisor(logdir="aug_supervisor_training", init_fn=load_pretrained_model, summary_op=None)
 
-            axes.flat[i * 3 + 1].set_title('mask')
-            axes.flat[i * 3 + 1].imshow(l[i, :, :, 0])
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+with sv.managed_session(config=config) as sess:
 
-            axes.flat[i * 3 + 2].set_title('pred')
-            axes.flat[i * 3 + 2].imshow(decode_labels(pred_value[i, :, :, 0]))
-        plt.savefig(image_save_path + str(start_time) + ".png")
-        plt.close(fig)
-        duration = time.time() - start_time
-        print('step {:d}, batch {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(epoch, batch_i, loss_value, duration)) 
-    saver.save(sess, save_model_path)
+    #file_writer = tf.summary.FileWriter('/home/systems/capstone/logs/', sess.graph)
+    #sess.run(tf.global_variables_initializer())
+    #load_pretrained_model(sess)
+    total_batches = 91
+    for epoch in range(epochs):
+        for batch_i  in range(total_batches):
+            if sv.should_stop():
+                break
+            start_time = time.time()
+            batch_features, batch_labels = load_preprocess_training_batch(batch_i)
+            if epoch % 50 == 0:
+                loss_value,pred_value,_,summry=sess.run([cost,pred,optim,merged],feed_dict={x:batch_features,y:batch_labels,keep_prob:keep_probability})
+                sv.summary_computed(sess, summry)
+                fig, axes = plt.subplots(2, 3, figsize = (16, 12))
+                for i in range(2):
+                    axes.flat[i * 3].set_title('data')
+                    axes.flat[i * 3].imshow((batch_features[i])[:, :, ::-1].astype(np.uint8))
+
+                    axes.flat[i * 3 + 1].set_title('mask')
+                    axes.flat[i * 3 + 1].imshow(decode_labels(batch_labels[i, :, :, 0]))
+
+                    axes.flat[i * 3 + 2].set_title('pred')
+                    axes.flat[i * 3 + 2].imshow(decode_labels(pred_value[i, :, :, 0]))
+                plt.savefig(image_save_path + str(start_time) + ".png")
+                plt.close(fig)
+            else:
+                loss_value,_=sess.run([cost,optim],feed_dict={x:batch_features,y:batch_labels,keep_prob:keep_probability})
+
+            duration = time.time() - start_time
+            print('step {:d}, batch {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(epoch, batch_i, loss_value, duration)) 
+        saver.save(sess, save_model_path)
