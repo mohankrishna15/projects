@@ -92,11 +92,7 @@ epochs = 50
 keep_probability = 0.75
 save_model_path = "./aug_capstone"
 image_save_path = "images/"
-#tf.reset_default_graph()
-#sess = tf.Session()
 
-
-#sess.run(tf.global_variables_initializer())
 
 
 # Inputs
@@ -109,8 +105,8 @@ net = SegmentationModel(None)
 saver = tf.train.Saver(max_to_keep=40)
 
 def load_pretrained_model(sess):
-    if not tf.train.checkpoint_exists("/home/systems/capstone/aug_supervisor_training/checkpoint"):
-        saver.restore(sess, "/home/systems/capstone/model.ckpt-init")
+    if not tf.train.checkpoint_exists("aug_supervisor_training/checkpoint"):
+        saver.restore(sess, "model.ckpt-init")
         print("initialised")
         
 
