@@ -1,5 +1,10 @@
 # Project: Semantic Segmentation 
 
+Please see my final capstone project report [here](https://github.com/mohankrishna15/projects/blob/master/capstone/Project%20Report.pdf)
+
+Please see my final capstone project proposal [here](https://github.com/mohankrishna15/projects/blob/master/capstone/proposal.pdf)
+
+
 ### Software requirements:
 
 1. [python 3.x](https://www.python.org/)
