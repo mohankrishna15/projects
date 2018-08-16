@@ -11,11 +11,13 @@ different attributes of faces. So for our purposes we assume the bounding boxes 
  
 Images are downloaded and unpacked into folder data.
 
+Following files are also downloaded:
+
 list_bbox_celeba.txt - file having bounding box infomration
 
 evalpartition.txt  - file having information on partitioning the dataset
 
-are also downloaded
+
 
 ### Run
 
