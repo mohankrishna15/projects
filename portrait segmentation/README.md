@@ -12,10 +12,13 @@ as background.
  
 Images are downloaded and unpacked into folder data.
 
+Following files are also downloaded:
+
 list_bbox_celeba.txt - file having bounding box infomration
+
 evalpartition.txt  - file having information on partitioning the dataset
 
-are also downloaded
+
 
 ### Run
 
