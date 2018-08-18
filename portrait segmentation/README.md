@@ -6,7 +6,7 @@ It is basically the task segmenting foreground from the background, in this case
 
 ### Data
 
-But CELEBA dataset does not have the dataset used to train on the task of segmentation. But it has data to identify faces and 
+CELEBA dataset does not have the dataset used to train on the task of segmentation. But it has data to identify faces and 
 different attributes of faces. So for our purposes we assume the bounding boxes of the faces as the foreground and rest of the image
 as background.
  
